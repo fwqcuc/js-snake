@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <title></title>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      border: 1px solid white;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas width="400" height="400" id="game"></canvas>
+  <script>
+
+    /*
+     初始化对象
+    */
+    var canvas = document.getElementById('game');
+    var context = canvas.getContext('2d');
+    // 初始化字体
+    context.font = "30px Arial";
+    context.textAlign = "center";
+    var count = 0;
+
+    /* 
+      定义游戏需要的数据。
+    */
+    var grid = 16; //单元格宽度，以像素为单位。
+
+    var snake = {
+      // 初始位置
+      x: 160,
+      y: 160,
+
+      // 蛇的移动速度和方向。
+      // 蛇每次移动一个单元格。
+      // 改变蛇x和y坐标方向上的速度，就是改变方向。
+      dx: grid,
+      dy: 0,
+
+      // 蛇的各个节点的坐标。
+      cells: [],
+
+      // 长度。
+      maxCells: 4
+    };
+
+    var food = {
+      x: 320,
+      y: 320
+    };
+
+
+    /*
+     相关处理函数
+    */
+
+    // 在min到max的范围内取随机数。
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    // 程序主循环
+    function loop() {
+      if (snake.x < 0 || snake.x >= canvas.width) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+        return;
+      }
+      if (snake.y < 0 || snake.y >= canvas.height) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+        return;
+      }
+      // requestAnimationFrame是在网页动画开发中重要的一个函数。
+      // 其功能就是指定一个回调函数，当下次显示器刷新时调用这个回调函数（这里就是loop函数）
+      // 显示器的刷新频率一般和操作系统中设置的频率相同。
+      // 回调函数的设置只有一次有效，所以需要每次都设置。
+      requestAnimationFrame(loop);
+      // 通常情况下是刷新频率是每秒60帧，这里通过计数器，每4次调用才处理一次，相当于降低到15帧每秒。
+
+      if (++count < 5) {
+        return;
+      }
+      count = 0;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 每个时间增加向蛇的方向增加一个节点。
+
+      // 计算新的节点的坐标。
+      snake.x += snake.dx;
+      snake.y += snake.dy;
+      // 增加到列表头。
+      snake.cells.unshift({
+        x: snake.x,
+        y: snake.y
+      });
+
+      // 删除尾部多余节点，如maxCells在上一个时钟周期没有增加，那么这时尾部节点就会被删除。
+      if (snake.cells.length > snake.maxCells) {
+        snake.cells.pop();
+      }
+      // 绘制食物
+      context.fillStyle = 'red';
+      context.fillRect(food.x, food.y, grid - 1, grid - 1);
+      // 绘制蛇
+      context.fillStyle = 'green';
+      snake.cells.forEach(function (cell, index) {
+
+        // 画每一个节点。节点间有1个像素的间隙。
+        context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+        // 判断蛇吃到食物
+        if (cell.x === food.x && cell.y === food.y) {
+          // 生长
+          snake.maxCells+=3; //每次长3个节点
+          // 生成新的食物
+          food.x = getRandomInt(0, 25) * grid;
+          food.y = getRandomInt(0, 25) * grid;
+        }
+        // 逐个节点判断是否有和自己碰撞的情况。
+        for (var i = index + 1; i < snake.cells.length; i++) {
+          // 如果game over了return
+          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+            return;
+          }
+        }
+      });
+    }
+    // 键盘监听
+    document.addEventListener('keydown', function (e) {
+      // enter键，重启游戏。
+      // 上下左右键，改变蛇的方向，并且不能掉头。
+
+      // enter
+      if (e.which == "13") {
+        snake.x = 160;
+        snake.y = 160;
+        snake.cells = [];
+        snake.maxCells = 4;
+        snake.dx = grid;
+        snake.dy = 0;
+        food.x = getRandomInt(0, 25) * grid;
+        food.y = getRandomInt(0, 25) * grid;
+        requestAnimationFrame(loop);
+
+      }
+
+      // left arrow key
+      if (e.which === 37 && snake.dx === 0) {
+        snake.dx = -grid;
+        snake.dy = 0;
+      }
+      // up arrow key
+      else if (e.which === 38 && snake.dy === 0) {
+        snake.dy = -grid;
+        snake.dx = 0;
+      }
+      // right arrow key
+      else if (e.which === 39 && snake.dx === 0) {
+        snake.dx = grid;
+        snake.dy = 0;
+      }
+      // down arrow key
+      else if (e.which === 40 && snake.dy === 0) {
+        snake.dy = grid;
+        snake.dx = 0;
+      }
+    });
+    // 开始游戏
+    requestAnimationFrame(loop);
+  </script>
+</body>
+
+</html>
